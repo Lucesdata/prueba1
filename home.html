@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTAP Campoalegre - Caudal</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Adaptador de fechas para Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <!-- Papa Parse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #e3f2fd;
+        }
+        canvas {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        h1 {
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <h1>PTAP Campoalegre - Caudal de Salida</h1>
+    <canvas id="caudalChart" width="800" height="400"></canvas>
+
+    <script>
+        const ctx = document.getElementById('caudalChart').getContext('2d');
+        const csvURL = "https://raw.githubusercontent.com/Lucesdata/prueba1/refs/heads/main/hourly_average_1.csv";
+        let chart;
+
+        // Cargar el archivo CSV desde la URL
+        fetch(csvURL)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(csvText => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const data = results.data;
+                        const caudalData = data
+                            .filter(row => row.Hour && row.Average) // Filtrar filas válidas
+                            .map(row => ({
+                                x: new Date(row.Hour),
+                                y: parseFloat(row.Average)
+                            }));
+
+                        // Crear el gráfico
+                        chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                datasets: [{
+                                    label: 'Caudal (L/s)',
+                                    data: caudalData,
+                                    borderColor: 'blue',
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            unit: 'day',
+                                            tooltipFormat: 'yyyy-MM-dd HH:mm'
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Fecha y Hora'
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Caudal (L/s)'
+                                        },
+                                        beginAtZero: true
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'top'
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            })
+            .catch(error => {
+                alert(`Error al cargar el archivo: ${error.message}`);
+            });
+    </script>
+</body>
+</html>
